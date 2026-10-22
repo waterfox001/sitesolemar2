@@ -207,6 +207,20 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+    color: inherit;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

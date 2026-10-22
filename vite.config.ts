@@ -8,6 +8,9 @@ const isVercel = Boolean(
 
 export default defineConfig({
   vite: {
+    define: {
+      "process.env.NODE_ENV": JSON.stringify("production"),
+    },
     oxc: {
       jsx: {
         development: false,

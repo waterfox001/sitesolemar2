@@ -33,9 +33,24 @@ function copyDirRecursive(src, dest) {
   }
 }
 
-console.log("Preparing dist directory for artifact packaging...");
+console.log("Preparing dist and Vercel output directories...");
 
-// Garante que o diretório dist sempre exista de forma recursiva
+// 0. Garante que qualquer index.html estático espúrio seja removido de .vercel/output/static.
+// Se existir um index.html em .vercel/output/static, a rotação de filesystem da Vercel
+// intercepta a rota '/' antes da função de SSR (__server.func), servindo um HTML vazio
+// sem os dados de hidratação ($_TSR) do TanStack Start e quebrando a renderização React.
+if (fs.existsSync(vercelStaticDir)) {
+  const vercelIndexHtml = path.join(vercelStaticDir, "index.html");
+  if (fs.existsSync(vercelIndexHtml)) {
+    fs.rmSync(vercelIndexHtml, { force: true });
+    console.log("Removed .vercel/output/static/index.html so Vercel edge routes '/' to SSR function (__server.func)");
+  }
+}
+
+// Limpa o diretório dist para evitar acúmulo de hashes obsoletos de builds anteriores
+if (fs.existsSync(distDir)) {
+  fs.rmSync(distDir, { recursive: true, force: true });
+}
 fs.mkdirSync(distDir, { recursive: true });
 
 // 1. Copia arquivos estáticos públicos (.output/public ou .vercel/output/static) -> dist
@@ -77,31 +92,13 @@ function patchServerIndex(filePath) {
 patchServerIndex(path.join(vercelFunctionsDir, "__server.func", "index.mjs"));
 patchServerIndex(path.join(distDir, "server", "__server.func", "index.mjs"));
 
-
-// 3. Garante que dist/index.html exista para fallback de hospedagem estática
+// 3. Fallback para dist/index.html caso o diretório dist seja hospedado em servidor puramente estático
 const distIndexHtml = path.join(distDir, "index.html");
-if (!fs.existsSync(distIndexHtml)) {
-  let mainJs = "";
-  let mainCss = "";
-
-  const searchDirs = [
-    path.join(distDir, "assets"),
-    path.join(vercelStaticDir, "assets"),
-    path.join(nitroPublicDir, "assets"),
-  ];
-
-  for (const dir of searchDirs) {
-    if (fs.existsSync(dir)) {
-      const files = fs.readdirSync(dir);
-      if (!mainJs) {
-        mainJs = files.find((f) => f.startsWith("index-") && f.endsWith(".js")) || "";
-      }
-      if (!mainCss) {
-        mainCss = files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) || "";
-      }
-      if (mainJs && mainCss) break;
-    }
-  }
+const distAssetsDir = path.join(distDir, "assets");
+if (fs.existsSync(distAssetsDir)) {
+  const files = fs.readdirSync(distAssetsDir);
+  const mainJs = files.find((f) => f.startsWith("index-") && f.endsWith(".js")) || "";
+  const mainCss = files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) || "";
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -129,15 +126,7 @@ if (!fs.existsSync(distIndexHtml)) {
 </html>`;
 
   fs.writeFileSync(distIndexHtml, html, "utf-8");
-  console.log(`Generated dist/index.html`);
-
-  if (fs.existsSync(vercelStaticDir)) {
-    const vercelIndexHtml = path.join(vercelStaticDir, "index.html");
-    if (!fs.existsSync(vercelIndexHtml)) {
-      fs.writeFileSync(vercelIndexHtml, html, "utf-8");
-      console.log(`Generated .vercel/output/static/index.html`);
-    }
-  }
+  console.log(`Generated fallback dist/index.html with current assets: JS=${mainJs}, CSS=${mainCss}`);
 }
 
-console.log("dist directory prepared successfully. File count:", fs.readdirSync(distDir).length);
+console.log("dist and Vercel output directories prepared successfully.");
