@@ -1,0 +1,6 @@
+{
+  "summary":  "Plano detalhado de inspeção e implementação para integração do Supabase como banco de dados real na Sol & Mar Rent a Car, detalhando diagnóstico atual (TanStack Start seguro, estrutura existente no localStorage, disparidades de schema), mapeamento das tabelas (vehicles, additionals, customers, reservations), regras RLS para privacidade de dados, prevenção de sobreposição de reservas com suporte a múltiplas unidades por frota e matriz de alterações necessárias sem efetuar modificações no código antes da aprovação.",
+  "updatedAt":  "2026-10-22T01:45:18.795553457Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

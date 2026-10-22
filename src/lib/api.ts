@@ -416,8 +416,13 @@ export async function createReservation(
       .select()
       .single();
     if (error) {
-      if (String(error.message).includes("reservations_no_overlap")) {
-        throw new Error("Este veículo acabou de ser reservado neste período.");
+      if (
+        String(error.message).includes("reservations_no_overlap") ||
+        String(error.message).includes("Capacidade esgotada")
+      ) {
+        throw new Error(
+          "Todas as unidades deste veículo já estão reservadas para o período solicitado. Por favor, escolha outro modelo ou ajuste as datas.",
+        );
       }
       throw error;
     }
@@ -543,6 +548,18 @@ export async function listAdditionals(onlyActive = false): Promise<CatalogAdditi
 }
 
 export async function getAdditional(id: string): Promise<CatalogAdditional | null> {
+  if (isRemoteEnabled()) {
+    try {
+      const { data, error } = await supabase!
+        .from("additionals")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (!error && data) return data as CatalogAdditional;
+    } catch {
+      // fallback para local db
+    }
+  }
   const list = await listAdditionals(false);
   return list.find((a) => a.id === id) ?? null;
 }
@@ -550,6 +567,24 @@ export async function getAdditional(id: string): Promise<CatalogAdditional | nul
 export async function saveAdditional(
   input: Partial<CatalogAdditional> & { name: string; price: number },
 ): Promise<CatalogAdditional> {
+  if (isRemoteEnabled()) {
+    if (input.id) {
+      const { id, created_at: _c, ...payload } = input;
+      const { data, error } = await supabase!
+        .from("additionals")
+        .update(payload)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as CatalogAdditional;
+    }
+    const { id: _ignored, created_at: _c2, ...payload } = input;
+    const { data, error } = await supabase!.from("additionals").insert(payload).select().single();
+    if (error) throw error;
+    return data as CatalogAdditional;
+  }
+
   const db = readDB();
   db.additionals = db.additionals ?? [];
 
@@ -588,12 +623,22 @@ export async function saveAdditional(
 }
 
 export async function deleteAdditional(id: string): Promise<void> {
+  if (isRemoteEnabled()) {
+    const { error } = await supabase!.from("additionals").delete().eq("id", id);
+    if (error) throw error;
+    return;
+  }
   const db = readDB();
   db.additionals = (db.additionals ?? []).filter((a) => a.id !== id);
   writeDB(db);
 }
 
 export async function setAdditionalActive(id: string, active: boolean): Promise<void> {
+  if (isRemoteEnabled()) {
+    const { error } = await supabase!.from("additionals").update({ active }).eq("id", id);
+    if (error) throw error;
+    return;
+  }
   const db = readDB();
   db.additionals = (db.additionals ?? []).map((a) => (a.id === id ? { ...a, active } : a));
   writeDB(db);
