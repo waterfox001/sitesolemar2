@@ -5,8 +5,15 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
-const outputPublicDir = path.join(rootDir, ".output", "public");
-const outputServerDir = path.join(rootDir, ".output", "server");
+
+// Public output candidates (Nitro default vs Vercel preset)
+const nitroPublicDir = path.join(rootDir, ".output", "public");
+const vercelStaticDir = path.join(rootDir, ".vercel", "output", "static");
+
+// Server output candidates
+const nitroServerDir = path.join(rootDir, ".output", "server");
+const vercelFunctionsDir = path.join(rootDir, ".vercel", "output", "functions");
+
 const distDir = path.join(rootDir, "dist");
 
 function copyDirRecursive(src, dest) {
@@ -28,29 +35,52 @@ function copyDirRecursive(src, dest) {
 
 console.log("Preparing dist directory for artifact packaging...");
 
-// 1. Copy .output/public -> dist
-if (fs.existsSync(outputPublicDir)) {
-  copyDirRecursive(outputPublicDir, distDir);
+// Garante que o diretório dist sempre exista de forma recursiva
+fs.mkdirSync(distDir, { recursive: true });
+
+// 1. Copia arquivos estáticos públicos (.output/public ou .vercel/output/static) -> dist
+if (fs.existsSync(nitroPublicDir)) {
+  copyDirRecursive(nitroPublicDir, distDir);
   console.log(`Copied .output/public -> dist`);
 }
-
-// 2. Copy .output/server -> dist/server
-if (fs.existsSync(outputServerDir)) {
-  copyDirRecursive(outputServerDir, path.join(distDir, "server"));
-  console.log(`Copied .output/server -> dist/server`);
+if (fs.existsSync(vercelStaticDir)) {
+  copyDirRecursive(vercelStaticDir, distDir);
+  console.log(`Copied .vercel/output/static -> dist`);
 }
 
-// 3. Ensure dist/index.html exists for static host fallback
+// 2. Copia saída do servidor (.output/server ou .vercel/output/functions) -> dist/server
+if (fs.existsSync(nitroServerDir)) {
+  copyDirRecursive(nitroServerDir, path.join(distDir, "server"));
+  console.log(`Copied .output/server -> dist/server`);
+}
+if (fs.existsSync(vercelFunctionsDir)) {
+  copyDirRecursive(vercelFunctionsDir, path.join(distDir, "server"));
+  console.log(`Copied .vercel/output/functions -> dist/server`);
+}
+
+// 3. Garante que dist/index.html exista para fallback de hospedagem estática
 const distIndexHtml = path.join(distDir, "index.html");
 if (!fs.existsSync(distIndexHtml)) {
   let mainJs = "";
   let mainCss = "";
 
-  const assetsDir = path.join(distDir, "assets");
-  if (fs.existsSync(assetsDir)) {
-    const files = fs.readdirSync(assetsDir);
-    mainJs = files.find((f) => f.startsWith("index-") && f.endsWith(".js")) || "";
-    mainCss = files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) || "";
+  const searchDirs = [
+    path.join(distDir, "assets"),
+    path.join(vercelStaticDir, "assets"),
+    path.join(nitroPublicDir, "assets"),
+  ];
+
+  for (const dir of searchDirs) {
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir);
+      if (!mainJs) {
+        mainJs = files.find((f) => f.startsWith("index-") && f.endsWith(".js")) || "";
+      }
+      if (!mainCss) {
+        mainCss = files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) || "";
+      }
+      if (mainJs && mainCss) break;
+    }
   }
 
   const html = `<!DOCTYPE html>
@@ -80,6 +110,14 @@ if (!fs.existsSync(distIndexHtml)) {
 
   fs.writeFileSync(distIndexHtml, html, "utf-8");
   console.log(`Generated dist/index.html`);
+
+  if (fs.existsSync(vercelStaticDir)) {
+    const vercelIndexHtml = path.join(vercelStaticDir, "index.html");
+    if (!fs.existsSync(vercelIndexHtml)) {
+      fs.writeFileSync(vercelIndexHtml, html, "utf-8");
+      console.log(`Generated .vercel/output/static/index.html`);
+    }
+  }
 }
 
 console.log("dist directory prepared successfully. File count:", fs.readdirSync(distDir).length);

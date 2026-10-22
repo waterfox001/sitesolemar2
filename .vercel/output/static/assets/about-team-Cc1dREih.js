@@ -1,0 +1,1 @@
+var e=`/assets/about-team-BF1iRLPi.jpg`;export{e as t};
