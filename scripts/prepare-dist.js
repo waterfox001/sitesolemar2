@@ -58,6 +58,26 @@ if (fs.existsSync(vercelFunctionsDir)) {
   console.log(`Copied .vercel/output/functions -> dist/server`);
 }
 
+// 2.1 Patch de segurança para reaproveitamento de socket keep-alive no Node.js runtime da Vercel
+function patchServerIndex(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  let content = fs.readFileSync(filePath, "utf-8");
+  const target = 'Object.defineProperty(req.socket, "remoteAddress", {';
+  if (content.includes(target)) {
+    content = content.replace(target, 'try { Object.defineProperty(req.socket, "remoteAddress", { configurable: true,');
+    const closeTarget = 'return ip ??= h?.split?.(",").shift()?.trim();\n\t} });';
+    if (content.includes(closeTarget)) {
+      content = content.replace(closeTarget, 'return ip ??= h?.split?.(",").shift()?.trim();\n\t} }); } catch {}');
+    }
+    fs.writeFileSync(filePath, content, "utf-8");
+    console.log(`Patched remoteAddress keep-alive safety in ${filePath}`);
+  }
+}
+
+patchServerIndex(path.join(vercelFunctionsDir, "__server.func", "index.mjs"));
+patchServerIndex(path.join(distDir, "server", "__server.func", "index.mjs"));
+
+
 // 3. Garante que dist/index.html exista para fallback de hospedagem estática
 const distIndexHtml = path.join(distDir, "index.html");
 if (!fs.existsSync(distIndexHtml)) {
