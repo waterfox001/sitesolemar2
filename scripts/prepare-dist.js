@@ -43,7 +43,9 @@ if (fs.existsSync(vercelStaticDir)) {
   const vercelIndexHtml = path.join(vercelStaticDir, "index.html");
   if (fs.existsSync(vercelIndexHtml)) {
     fs.rmSync(vercelIndexHtml, { force: true });
-    console.log("Removed .vercel/output/static/index.html so Vercel edge routes '/' to SSR function (__server.func)");
+    console.log(
+      "Removed .vercel/output/static/index.html so Vercel edge routes '/' to SSR function (__server.func)",
+    );
   }
 }
 
@@ -79,10 +81,16 @@ function patchServerIndex(filePath) {
   let content = fs.readFileSync(filePath, "utf-8");
   const target = 'Object.defineProperty(req.socket, "remoteAddress", {';
   if (content.includes(target)) {
-    content = content.replace(target, 'try { Object.defineProperty(req.socket, "remoteAddress", { configurable: true,');
+    content = content.replace(
+      target,
+      'try { Object.defineProperty(req.socket, "remoteAddress", { configurable: true,',
+    );
     const closeTarget = 'return ip ??= h?.split?.(",").shift()?.trim();\n\t} });';
     if (content.includes(closeTarget)) {
-      content = content.replace(closeTarget, 'return ip ??= h?.split?.(",").shift()?.trim();\n\t} }); } catch {}');
+      content = content.replace(
+        closeTarget,
+        'return ip ??= h?.split?.(",").shift()?.trim();\n\t} }); } catch {}',
+      );
     }
     fs.writeFileSync(filePath, content, "utf-8");
     console.log(`Patched remoteAddress keep-alive safety in ${filePath}`);
@@ -126,7 +134,9 @@ if (fs.existsSync(distAssetsDir)) {
 </html>`;
 
   fs.writeFileSync(distIndexHtml, html, "utf-8");
-  console.log(`Generated fallback dist/index.html with current assets: JS=${mainJs}, CSS=${mainCss}`);
+  console.log(
+    `Generated fallback dist/index.html with current assets: JS=${mainJs}, CSS=${mainCss}`,
+  );
 }
 
 console.log("dist and Vercel output directories prepared successfully.");

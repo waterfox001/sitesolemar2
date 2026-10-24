@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, Clock, Instagram, Mail, MapPin, MessageCircle, Phone, ShieldCheck } from "lucide-react";
+import {
+  Building2,
+  Clock,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHero, SiteLayout } from "@/components/site/SiteLayout";
 import { company, whatsappLink } from "@/lib/env";
