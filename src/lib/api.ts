@@ -377,7 +377,7 @@ export async function createReservation(
       .insert({
         name: input.customer.name,
         email: input.customer.email ? input.customer.email.trim() : null,
-        phone: input.customer.phone,
+        phone: input.customer.phone || "Contato via WhatsApp",
         document: input.customer.document ?? null,
         city: input.customer.city ?? null,
         notes: input.customer.notes ?? null,
@@ -434,7 +434,7 @@ export async function createReservation(
     id: uid("c"),
     name: input.customer.name,
     email: input.customer.email ? input.customer.email.trim() : null,
-    phone: input.customer.phone,
+    phone: input.customer.phone || "Contato via WhatsApp",
     document: input.customer.document ?? null,
     city: input.customer.city ?? null,
     notes: input.customer.notes ?? null,

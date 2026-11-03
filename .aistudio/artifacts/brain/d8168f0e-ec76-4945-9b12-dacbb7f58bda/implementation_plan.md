@@ -1,57 +1,74 @@
-# Resolução dos Problemas Visuais e de Renderização na Vercel
+# Integração do Formulário de Reserva com WhatsApp — Sol & Mar Rent a Car
 
-## 1. Causas Raízes Identificadas
+## 1. Objetivo Realizado
 
-1. **Interceptação da Rota Raiz por `index.html` Estático Vazio em `.vercel/output/static` (Causa Primária do Conteúdo Oculto):**
-   - O arquivo de roteamento da Vercel (`.vercel/output/config.json`) possui a regra `{ "handle": "filesystem" }` antes de `{ "src": "/(.*)", "dest": "/__server" }`.
-   - No script `prepare-dist.js`, estava sendo gerado um arquivo `.vercel/output/static/index.html` com um esqueleto estático vazio (`<div id="root"></div>`) e scripts de hash desatualizados.
-   - Quando o visitante acessava `https://sitesolemar2.vercel.app/`, a borda da Vercel entregava o `index.html` estático sem invocar a função SSR do TanStack Start (`__server.func`).
-   - Sem o SSR, a variável de hidratação essencial do TanStack Start (`window.$_TSR`) não existia no DOM.
-   - Ao carregar no navegador, o bundle do TanStack Router lançava uma exceção crítica:
-     `Invariant failed: Expected to find bootstrap data on window.$_TSR, but we did not. Please file an issue!`
-   - A hidratação do React abortava imediatamente, deixando o `<div id="root"></div>` em branco e sem conteúdo renderizado.
-
-2. **Cores Estranhas / Elementos Azuis e Vermelhos:**
-   - Com o React quebrado antes de montar e sem as classes aplicadas dinamicamente ou na falha de hidratação, os navegadores recorreram aos estilos padrão do User-Agent (links `<a href="...">` em azul `#0000ee`, foco/ativo em vermelho `#ff0000`, botões sem estilos herdados).
-   - Faltavam no `@layer base` resets explícitos de links (`a { color: inherit; text-decoration: inherit; }`) e elementos de formulário, além de que a ausência do HTML pré-renderizado pelo SSR expunha o fallback cru do navegador.
-
-3. **Bundle React 19 Development em Produção:**
-   - A ausência da definição estática `"process.env.NODE_ENV": "production"` no cliente fazia o Rollup/Vite empacotar o código de desenvolvimento do React 19 (`react-dom-client.development.js`), aumentando o bundle para ~785 kB e gerando avisos de limite de tamanho de chunk e overlays de erro.
-
-4. **Origem dos Avisos de Log da Vercel:**
-   - `npm warn Unknown env config "cache-dir"`: É gerado pelo próprio ambiente de build runner da Vercel ao injetar a variável legada `npm_config_cache_dir` (o npm 10 utiliza `cache` em vez de `cache-dir`). Não afeta a aplicação nem o código-fonte.
-   - `Adjust chunk size limit for this warning via build.chunkSizeWarningLimit`: Disparado quando o bundle de cliente sem substituição de `NODE_ENV` ultrapassa o patamar padrão de 500 kB do Vite devido à inclusão de ferramentas de desenvolvimento.
+O fluxo de solicitação de locação no site da Sol & Mar Rent a Car foi adaptado para direcionar o cliente diretamente ao WhatsApp oficial da locadora (+55 85 99974-3558). Foram removidas todas as etapas de checkout, cobrança de caução e pagamento online neste momento, preservando o design, catálogo de veículos, calendário e opcionais.
 
 ---
 
-## 2. Arquivos Alterados
+## 2. Padrão da Mensagem Automática Formatada
 
-1. **`scripts/prepare-dist.js`**:
-   - Adicionada exclusão obrigatória de qualquer arquivo `.vercel/output/static/index.html` para garantir que a Vercel sempre repasse as rotas de páginas (`/`, `/como-funciona`, `/contato`, `/sobre`, etc.) para a função de SSR (`__server.func`).
-   - Limpeza completa do diretório `dist` antes de cada cópia para impedir acúmulo de hashes obsoletos de builds anteriores.
-   - Sincronização dinâmica dos nomes reais de CSS e JS para o arquivo `dist/index.html` de fallback estático.
-   - Preservado o patch de reaproveitamento seguro de socket keep-alive (`Object.defineProperty(req.socket, "remoteAddress", ...)`).
+A mensagem gerada segue rigorosamente o modelo homologado:
 
-2. **`vite.config.ts`**:
-   - Adicionado `define: { "process.env.NODE_ENV": JSON.stringify("production") }` para garantir compilação de produção enxuta e sem código de debug no cliente.
-   - Preservadas as configurações do Nitro com preset Vercel (`entryFormat: "node"`) e integração com `server.ts`.
+```
+Olá! Vim pelo site da Sol & Mar Rent a Car. Meu nome é [NOME] e estas são minhas preferências para a locação:
 
-3. **`src/styles.css`**:
-   - Adicionados resets base universais para links (`a`) e elementos de formulário (`button`, `input`, `select`, `textarea`) no `@layer base` para assegurar herança limpa de cores e tipografia, evitando qualquer fallback para o azul/vermelho padrão do navegador.
-   - Preservada 100% da identidade visual: azul-marinho profundo (`#123D70`), amarelo-sol (`#F6C644`), azul-mar, temas claro e escuro.
+🚗 Veículo desejado: [MARCA E MODELO]
+
+📅 Retirada: [DATA] às [HORÁRIO]
+
+📅 Devolução: [DATA] às [HORÁRIO]
+
+📍 Local de retirada: [LOCAL DE RETIRADA]
+
+📍 Local de devolução: [LOCAL DE DEVOLUÇÃO]
+
+🧸 Opcionais selecionados:
+[LISTA DOS OPCIONAIS ESCOLHIDOS ou "Nenhum opcional selecionado"]
+
+Gostaria de verificar a disponibilidade do veículo e receber as informações para concluir a locação.
+
+Obrigado(a)!
+```
 
 ---
 
-## 3. Testes e Validações Executados
+## 3. Arquivos Modificados
 
-1. **Verificação de Ausência do `index.html` Estático:**
-   - Verificado que `.vercel/output/static/index.html` **não existe** após o build, garantindo que o roteamento de borda da Vercel não sequestra a rota raiz.
-2. **Execução Direta do Servidor SSR (`__server.func`):**
-   - Rota `/`: HTTP 200, 85.215 bytes de HTML pré-renderizado, `<title>` correto, tags de meta OpenGraph, link do CSS gerado (`styles-*.css`) e bootstrap de hidratação (`window.$_TSR`) presente.
-   - Rotas secundárias testadas: `/como-funciona` (200), `/contato` (200), `/sobre` (200), `/admin` (200), `/reserva` (200), `/veiculos/spin-7l` (200).
-3. **Verificação dos Arquivos Estáticos:**
-   - CSS compilado (`styles-*.css`, 115 kB) com todas as classes utilitárias do Tailwind v4 presentes e validadas.
-   - Imagens da frota (Onix, Spin, Tracker, Hilux, Pulse, Polo, C3, Renegade, 208, Tera) e logos intactos.
-4. **Linters e Compilação:**
-   - `npm run lint`: 0 erros encontrados.
-   - `compile_applet`: Compilação bem-sucedida.
+1. **`src/lib/checkout.ts`**:
+   - Criada a função `buildDirectReservationWhatsAppMessage(params)` gerando o texto exato com emojis, espaçamentos e lógica para múltiplos opcionais ou "Nenhum opcional selecionado".
+   - Criada a função `buildDirectReservationWhatsAppUrl(params)` apontando para `https://wa.me/5585999743558?text=...` com codificação URL para computadores e celulares.
+
+2. **`src/lib/env.ts`**:
+   - Padronizado o número de WhatsApp comercial oficial: `5585999743558` (`+55 85 99974-3558`).
+   - Padronizados os locais de retirada em `RENTAL_LOCATIONS`:
+     - `Aeroporto Internacional de Fortaleza – Pinto Martins`
+     - `Avenida da Abolição, 1894, Meireles, Fortaleza, Ceará, Brasil`
+     - `Hotel ou endereço em Fortaleza`
+   - Removidas expressões informais ou provisórias de locais definidos.
+
+3. **`src/routes/reserva.tsx`**:
+   - Refatorado o fluxo em 5 etapas claras:
+     1. Dados da locação (datas, horários e locais oficiais de retirada e devolução).
+     2. Escolha do veículo (catálogo completo com marca e modelo reais).
+     3. Opcionais desejados (bebê-conforto, cadeirinha, assento de elevação, condutor adicional).
+     4. Identificação (Nome completo obrigatório; e-mail e notas opcionais; sem solicitar telefone novamente).
+     5. Revisão e WhatsApp (resumo das escolhas, prévia da mensagem e botão destacado "Continuar pelo WhatsApp").
+   - Adicionado botão "Copiar mensagem para colar manualmente".
+   - Mantida gravação assíncrona em segundo plano para registro da cotação no painel administrativo `/admin`.
+
+4. **`src/routes/index.tsx` & `src/routes/como-funciona.tsx` & `src/components/site/WhatsAppAssistant.tsx`**:
+   - Alinhados os textos dos passos de locação e as opções de locais sem expressões provisórias.
+
+---
+
+## 4. Testes Realizados
+
+- [x] **Veículo e Modelo Específico:** Testado com Toyota Hilux, Chevrolet Tracker Turbo, Volkswagen Tera e Citroën C3, garantindo o nome exato.
+- [x] **Datas e Horários:** Testadas datas e horários de retirada e devolução formatados (`DD/MM/AAAA às HH:MM`).
+- [x] **Locais de Retirada e Devolução:** Aeroporto Pinto Martins e Avenida da Abolição validados.
+- [x] **Múltiplos Opcionais vs Sem Opcionais:** Confirmada a exibição da lista com marcadores quando houver itens e do texto "Nenhum opcional selecionado" quando vazio.
+- [x] **Validação de Formulário:** Nome completo com validação de preenchimento obrigatório e e-mail estritamente opcional.
+- [x] **Link e Destino do WhatsApp:** Validado o link `https://wa.me/5585999743558` com codificação UTF-8 de caracteres acentuados e quebras de linha para desktop e mobile.
+- [x] **Linter e Compilação:** `eslint` com 0 erros e `compile_applet` bem-sucedido.
+- [x] **SSR em Produção:** Rota `/reserva` retornando HTTP 200 com HTML completo pré-renderizado.

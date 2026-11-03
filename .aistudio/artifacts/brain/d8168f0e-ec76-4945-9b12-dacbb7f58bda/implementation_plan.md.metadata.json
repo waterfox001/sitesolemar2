@@ -1,6 +1,6 @@
 {
-  "summary":  "Plano de correção dos problemas visuais e de hidratação na Vercel (Sol & Mar Rent a Car). Detalha as causas raízes (interceptação por index.html estático vazio na Vercel, ausência de $_TSR, bundle de desenvolvimento e resets de elementos) e a validação completa do SSR e estilização.",
-  "updatedAt":  "2026-10-24T01:27:04.006411269Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Plano de integração do fluxo de reserva diretamente via WhatsApp para a Sol & Mar Rent a Car. Detalha o modelo da mensagem dinâmica, número comercial (+55 85 99974-3558), validações de campos (nome obrigatório, e-mail opcional), locais oficiais e remoção de checkout online/Mercado Pago.",
+  "updatedAt": "2026-10-28T00:50:53.854553082Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

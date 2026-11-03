@@ -6,7 +6,6 @@ import {
   KeyRound,
   MessageCircle,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHero, SiteLayout } from "@/components/site/SiteLayout";
@@ -36,32 +35,27 @@ const steps = [
   {
     icon: CalendarDays,
     title: "1. Período e local de retirada",
-    text: "Informe as datas e horários em que precisará do veículo no Aeroporto Internacional de Fortaleza ou na loja no Meireles.",
+    text: "Informe as datas e horários em que precisará do veículo no Aeroporto Internacional de Fortaleza – Pinto Martins ou na sede comercial no Meireles.",
   },
   {
     icon: CarFront,
-    title: "2. Escolha da categoria",
-    text: "Navegue pelo catálogo demonstrativo e selecione o grupo de veículos que melhor atende sua viagem (econômico, sedã, SUV ou picape).",
+    title: "2. Escolha do veículo",
+    text: "Navegue pelo catálogo e selecione o veículo desejado (Toyota Hilux, Chevrolet Tracker, Spin 7 Lugares, Citroën C3, entre outros modelos).",
   },
   {
     icon: Sparkles,
-    title: "3. Opcionais e estimativa",
-    text: "Indique necessidades especiais, como cadeirinha de bebê ou condutor adicional, e visualize a estimativa de diárias sem surpresas.",
-  },
-  {
-    icon: UserRound,
-    title: "4. Dados de contato básicos",
-    text: "Preencha apenas nome, WhatsApp e e-mail. Não solicitamos dados de pagamento nem documentação sensível nesta fase.",
+    title: "3. Opcionais desejados",
+    text: "Indique opcionais como bebê-conforto, cadeirinha infantil ou condutor adicional, visualizando tudo com total transparência.",
   },
   {
     icon: MessageCircle,
-    title: "5. Atendimento no WhatsApp",
-    text: `Nossa equipe em Fortaleza recebe seu pedido pelo WhatsApp (${company.phoneInternational}), verifica a disponibilidade física da frota e formaliza a proposta personalizada.`,
+    title: "4. Continuar pelo WhatsApp",
+    text: `Clique no botão para abrir o WhatsApp oficial da Sol & Mar (+55 85 99974-3558) com a mensagem pronta com todas as suas escolhas para confirmar a disponibilidade.`,
   },
   {
     icon: KeyRound,
-    title: "6. Retirada e vistoria",
-    text: "No dia e horário combinados, você apresenta CNH e documento válido, realiza a vistoria e inicia sua viagem com segurança.",
+    title: "5. Retirada e vistoria",
+    text: "No dia e horário combinados, você apresenta CNH e documento válido, realiza a vistoria e inicia sua viagem com total liberdade.",
   },
 ];
 

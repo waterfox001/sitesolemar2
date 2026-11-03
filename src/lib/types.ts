@@ -123,7 +123,7 @@ export interface Reservation {
 
 export interface CustomerInput {
   name: string;
-  phone: string;
+  phone?: string; // Opcional no fluxo web direto para WhatsApp
   email?: string; // Opcional conforme requisito da locadora
   document?: string;
   city?: string;

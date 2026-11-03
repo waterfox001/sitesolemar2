@@ -37,9 +37,9 @@ export const ASSISTANT_TOPICS = [
 ] as const;
 
 export const LOCATIONS = [
-  "Sede Meireles (Av. da Abolição, 1894)",
-  "Aeroporto Internacional de Fortaleza (provisório / sob consulta)",
-  "Hotel / Orla de Fortaleza (sob consulta)",
+  "Aeroporto Internacional de Fortaleza – Pinto Martins",
+  "Avenida da Abolição, 1894, Meireles, Fortaleza, Ceará, Brasil",
+  "Hotel ou endereço em Fortaleza",
 ] as const;
 
 interface ChatMessage {

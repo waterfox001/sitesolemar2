@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon, Clock, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 import { daysBetween } from "@/lib/format";
 
 interface DateRangePickerProps {
-  start: string; // YYYY-MM-DD
-  end: string; // YYYY-MM-DD
+  start: string; // YYYY-MM-DD ou ""
+  end: string; // YYYY-MM-DD ou ""
   onChangeRange: (start: string, end: string) => void;
   startTime: string;
   endTime: string;
@@ -34,8 +34,8 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
 
-  const startDate = start ? parseISO(start) : startOfToday();
-  const endDate = end ? parseISO(end) : startOfToday();
+  const startDate = start ? parseISO(start) : undefined;
+  const endDate = end ? parseISO(end) : undefined;
 
   const selectedRange: DateRange = {
     from: startDate,
@@ -56,7 +56,8 @@ export function DateRangePicker({
     }
   };
 
-  const durationDays = daysBetween(start, end);
+  const hasBothDates = Boolean(start && end);
+  const durationDays = hasBothDates ? daysBetween(start, end) : 0;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -67,7 +68,7 @@ export function DateRangePicker({
         {/* Bloco de Datas com Popover */}
         <div className="sm:col-span-2">
           <label className="mb-1.5 block text-xs font-semibold text-foreground">
-            Período da Locação (Retirada e Devolução)
+            Período da Locação (Retirada e Devolução) *
           </label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -83,20 +84,37 @@ export function DateRangePicker({
                     <span className="text-[0.68rem] font-bold uppercase tracking-wider text-muted-foreground block">
                       Retirada → Devolução
                     </span>
-                    <span className="text-sm font-semibold text-foreground">
-                      {format(startDate, "dd 'de' MMM", { locale: ptBR })}
-                      {"  "}→{"  "}
-                      {format(endDate, "dd 'de' MMM, yyyy", { locale: ptBR })}
-                    </span>
+                    {hasBothDates && startDate && endDate ? (
+                      <span className="text-sm font-semibold text-foreground">
+                        {format(startDate, "dd 'de' MMM", { locale: ptBR })}
+                        {"  "}→{"  "}
+                        {format(endDate, "dd 'de' MMM, yyyy", { locale: ptBR })}
+                      </span>
+                    ) : startDate ? (
+                      <span className="text-sm font-semibold text-foreground">
+                        {format(startDate, "dd 'de' MMM, yyyy", { locale: ptBR })} → Escolha a
+                        devolução
+                      </span>
+                    ) : (
+                      <span className="text-sm font-normal text-muted-foreground italic">
+                        Clique para selecionar as datas de retirada e devolução
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-2 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
-                  <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary">
-                    {durationDays} {durationDays === 1 ? "diária" : "diárias"}
-                  </span>
+                  {hasBothDates ? (
+                    <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary">
+                      {durationDays} {durationDays === 1 ? "diária" : "diárias"}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted-foreground">
+                      Escolher datas
+                    </span>
+                  )}
                   <span className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
-                    Alterar
+                    {hasBothDates ? "Alterar" : "Selecionar"}
                   </span>
                 </div>
               </button>
@@ -116,7 +134,7 @@ export function DateRangePicker({
 
               <Calendar
                 mode="range"
-                defaultMonth={startDate}
+                defaultMonth={startDate || startOfToday()}
                 selected={selectedRange}
                 onSelect={handleSelectRange}
                 numberOfMonths={1}
@@ -127,12 +145,23 @@ export function DateRangePicker({
 
               <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50 text-xs text-muted-foreground">
                 <span>
-                  Período:{" "}
-                  <strong className="text-foreground">
-                    {durationDays} {durationDays === 1 ? "diária" : "diárias"}
-                  </strong>
+                  {hasBothDates ? (
+                    <>
+                      Período:{" "}
+                      <strong className="text-foreground">
+                        {durationDays} {durationDays === 1 ? "diária" : "diárias"}
+                      </strong>
+                    </>
+                  ) : (
+                    "Selecione as datas de início e fim"
+                  )}
                 </span>
-                <Button size="sm" variant="hero" onClick={() => setOpen(false)}>
+                <Button
+                  size="sm"
+                  variant="hero"
+                  disabled={!hasBothDates}
+                  onClick={() => setOpen(false)}
+                >
                   Confirmar datas
                 </Button>
               </div>
@@ -144,13 +173,14 @@ export function DateRangePicker({
         <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5 font-medium text-foreground">
             <Clock className="size-3.5 text-primary" />
-            Horário de Retirada
+            Horário de Retirada *
           </span>
           <select
             value={startTime}
             onChange={(e) => onChangeStartTime(e.target.value)}
             className="h-11 rounded-xl border border-input bg-surface px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
           >
+            <option value="">Selecione o horário</option>
             {hours.map((h) => (
               <option key={`start-${h}`} value={h}>
                 {h}
@@ -163,13 +193,14 @@ export function DateRangePicker({
         <label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5 font-medium text-foreground">
             <Clock className="size-3.5 text-primary" />
-            Horário de Devolução
+            Horário de Devolução *
           </span>
           <select
             value={endTime}
             onChange={(e) => onChangeEndTime(e.target.value)}
             className="h-11 rounded-xl border border-input bg-surface px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
           >
+            <option value="">Selecione o horário</option>
             {hours.map((h) => (
               <option key={`end-${h}`} value={h}>
                 {h}

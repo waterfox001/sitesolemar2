@@ -222,3 +222,150 @@ export function buildReservationWhatsAppMessage(breakdown: CheckoutBreakdown): s
 
   return lines.join("\n");
 }
+
+export interface DirectReservationOptionalItem {
+  id?: string;
+  name: string;
+  price?: number;
+  type?: "per_day" | "per_rental";
+  quantity: number;
+  total?: number;
+}
+
+export interface DirectReservationWhatsAppParams {
+  customerName?: string;
+  vehicleName: string;
+  vehicleCategory?: string;
+  days: number;
+  startDateFormatted: string;
+  startTime: string;
+  endDateFormatted: string;
+  endTime: string;
+  pickupLocation: string;
+  returnLocation: string;
+  dailyRate?: number;
+  dailySubtotal?: number;
+  optionalsSubtotal?: number;
+  rentalTotal?: number;
+  optionals?: DirectReservationOptionalItem[];
+  customerEmail?: string;
+  customerNotes?: string;
+}
+
+/**
+ * Mensagem padronizada oficial para envio direto ao WhatsApp da Sol & Mar Rent a Car (+55 85 99974-3558).
+ *
+ * Formato em texto simples, organizado por seções e quebras de linha, sem emojis ou caracteres decorativos.
+ * Exibe cada opcional selecionado individualmente com o nome exato, quantidade e subtotal calculado.
+ * Se nenhum opcional for selecionado, a seção é totalmente omitida.
+ */
+export function buildDirectReservationWhatsAppMessage(
+  params: DirectReservationWhatsAppParams,
+): string {
+  const {
+    customerName,
+    vehicleName,
+    vehicleCategory,
+    days,
+    startDateFormatted,
+    startTime,
+    endDateFormatted,
+    endTime,
+    pickupLocation,
+    returnLocation,
+    dailyRate = 0,
+    dailySubtotal = 0,
+    optionalsSubtotal = 0,
+    rentalTotal = 0,
+    optionals = [],
+    customerEmail,
+    customerNotes,
+  } = params;
+
+  const greeting =
+    customerName && customerName.trim()
+      ? `Olá! Vim pelo site da Sol & Mar Rent a Car. Meu nome é ${customerName.trim()} e gostaria de solicitar a seguinte locação:`
+      : `Olá! Vim pelo site da Sol & Mar Rent a Car e gostaria de solicitar a seguinte locação:`;
+
+  const lines: string[] = [
+    greeting,
+    ``,
+    `VEÍCULO:`,
+    `- Modelo: ${vehicleName.trim()}${vehicleCategory ? ` (${vehicleCategory})` : ""}`,
+    dailyRate > 0 ? `- Diária base: ${brl(dailyRate)}/dia` : `- Diária base: Sob consulta`,
+    ``,
+    `PERÍODO E LOCAIS:`,
+    `- Retirada: ${startDateFormatted} às ${startTime}`,
+    `- Local de retirada: ${pickupLocation.trim()}`,
+    `- Devolução: ${endDateFormatted} às ${endTime}`,
+    `- Local de devolução: ${returnLocation.trim()}`,
+    `- Duração: ${days} diária(s)`,
+  ];
+
+  // Identificação individual exata dos opcionais com quantidade e subtotal.
+  // Se o cliente não selecionar nenhum opcional, a seção é totalmente omitida.
+  const activeOptionals = optionals.filter((opt) => opt.quantity > 0);
+  if (activeOptionals.length > 0) {
+    lines.push(``);
+    lines.push(`OPCIONAIS SELECIONADOS:`);
+    for (const opt of activeOptionals) {
+      const qtyText = `${opt.quantity} ${opt.quantity === 1 ? "unidade" : "unidades"}`;
+      let rateText = "";
+      if (typeof opt.price === "number" && opt.price > 0) {
+        rateText =
+          opt.type === "per_day"
+            ? `${brl(opt.price)}/dia cada`
+            : `${brl(opt.price)} taxa única cada`;
+      }
+      let subText = "";
+      if (typeof opt.total === "number" && opt.total > 0) {
+        subText = ` (Subtotal: ${brl(opt.total)})`;
+      }
+      lines.push(`- ${opt.name}: ${qtyText}${rateText ? `, ${rateText}` : ""}${subText}`);
+    }
+  }
+
+  if (customerName && customerName.trim()) {
+    lines.push(``);
+    lines.push(`SOLICITANTE:`);
+    lines.push(`- Nome: ${customerName.trim()}`);
+    if (customerEmail && customerEmail.trim()) {
+      lines.push(`- E-mail: ${customerEmail.trim()}`);
+    }
+    if (customerNotes && customerNotes.trim()) {
+      lines.push(`- Observações: ${customerNotes.trim()}`);
+    }
+  }
+
+  lines.push(``);
+  lines.push(`RESUMO DOS VALORES:`);
+  if (dailyRate > 0) {
+    lines.push(`- Diárias do veículo (${days}x): ${brl(dailySubtotal)}`);
+    if (optionalsSubtotal > 0) {
+      lines.push(`- Opcionais selecionados: ${brl(optionalsSubtotal)}`);
+    }
+    lines.push(`- Total estimado: ${brl(rentalTotal)}`);
+  } else {
+    lines.push(`- Diárias do veículo: Sob consulta`);
+    if (optionalsSubtotal > 0) {
+      lines.push(`- Opcionais selecionados: ${brl(optionalsSubtotal)}`);
+      lines.push(`- Total estimado: Sob consulta (+ ${brl(optionalsSubtotal)} em opcionais)`);
+    } else {
+      lines.push(`- Total estimado: Sob consulta`);
+    }
+  }
+
+  lines.push(``);
+  lines.push(
+    `Gostaria de verificar a disponibilidade do veículo e receber as informações para concluir a locação.`,
+  );
+  lines.push(``);
+  lines.push(`Obrigado(a)!`);
+
+  return lines.join("\n");
+}
+
+export function buildDirectReservationWhatsAppUrl(params: DirectReservationWhatsAppParams): string {
+  const text = buildDirectReservationWhatsAppMessage(params);
+  return `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(text)}`;
+}

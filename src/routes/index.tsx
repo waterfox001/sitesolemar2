@@ -93,22 +93,22 @@ const steps = [
   {
     icon: CalendarDays,
     title: "1. Período e local",
-    text: "Informe as datas e horários de retirada e devolução no Aeroporto Internacional de Fortaleza.",
+    text: "Informe as datas e horários de retirada e devolução no Aeroporto Internacional de Fortaleza – Pinto Martins ou na sede comercial no Meireles.",
   },
   {
     icon: CarFront,
     title: "2. Escolha o veículo",
-    text: "Compare categorias, itens de conforto e diárias do catálogo demonstrativo com total clareza.",
+    text: "Escolha o modelo desejado (Toyota Hilux, Chevrolet Tracker, Spin 7 Lugares, Citroën C3, entre outros).",
   },
   {
     icon: Sparkles,
-    title: "3. Opcionais & Dados",
-    text: "Adicione itens demonstrativos (como cadeirinha ou motorista extra) e informe seu contato básico.",
+    title: "3. Opcionais desejados",
+    text: "Adicione itens como bebê-conforto ou cadeirinha infantil com total transparência.",
   },
   {
     icon: MessageCircle,
-    title: "4. Envio pelo WhatsApp",
-    text: "Receba o resumo estruturado e envie para nossa equipe confirmar a disponibilidade e o valor.",
+    title: "4. Continuar pelo WhatsApp",
+    text: "Abra a conversa diretamente pelo WhatsApp (+55 85 99974-3558) com a mensagem preenchida com todas as suas preferências.",
   },
 ];
 
@@ -137,10 +137,10 @@ const perks = [
 
 function Home() {
   const navigate = useNavigate();
-  const [start, setStart] = useState(todayISO());
-  const [startTime, setStartTime] = useState("09:00");
-  const [end, setEnd] = useState(addDaysISO(todayISO(), 3));
-  const [endTime, setEndTime] = useState("09:00");
+  const [start, setStart] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [end, setEnd] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [pickupLocation] = useState(company.defaultPickupLocation);
   const [category, setCategory] = useState("Todas");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -187,6 +187,16 @@ function Home() {
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     setValidationError(null);
+
+    if (!start || !end) {
+      setValidationError("Por favor, selecione as datas de retirada e devolução no calendário.");
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      setValidationError("Por favor, selecione os horários de retirada e devolução.");
+      return;
+    }
 
     if (end < start) {
       setValidationError("A data de devolução não pode ser anterior à data de retirada.");
@@ -253,8 +263,9 @@ function Home() {
                 <span className="text-xs font-semibold tracking-wider text-primary uppercase">
                   Simulação de Locação
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  Local provisório: <strong className="text-foreground">{pickupLocation}</strong>
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="size-3.5 text-primary" />
+                  Local de retirada: <strong className="text-foreground">{pickupLocation}</strong>
                 </span>
               </div>
 

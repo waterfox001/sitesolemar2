@@ -199,7 +199,7 @@ export function Catalog() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3 text-xs text-muted-foreground">
             <p>
               Mostrando <strong className="text-foreground">{filtered.length}</strong> de{" "}
-              {active.length} modelos cadastrados na demonstração
+              {active.length} modelos disponíveis na frota
             </p>
 
             {hasActiveFilters ? (
