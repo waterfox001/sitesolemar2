@@ -117,8 +117,9 @@ if (fs.existsSync(distAssetsDir)) {
     <meta name="description" content="Locadora de veículos em Fortaleza - Sol &amp; Mar Rent a Car. Sua viagem. Seu caminho. Sua liberdade. Locação com atendimento humano e frota revisada." />
     <meta property="og:title" content="Sol &amp; Mar Rent a Car" />
     <meta property="og:description" content="Locação de veículos em Fortaleza com atendimento próximo, flexibilidade e veículos revisados." />
-    <meta property="og:type" content="website" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" />
